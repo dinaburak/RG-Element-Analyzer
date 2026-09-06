@@ -48,15 +48,4 @@ def identify_element(average_knee, average_hip):
 
         return best_match
 
-if __name__ == "__main__":
 
-    element = identify_element(
-        average_knee=23.51,
-        average_hip=104.56
-    )
-
-    if element:
-        print("Identified element:", element.element_name)
-        print("Base value:", element.base_value)
-    else:
-        print("No matching element found")

@@ -1,3 +1,4 @@
+MYVIDEO = "test.mp4"
 import cv2
 import math
 import mediapipe as mp
@@ -50,7 +51,7 @@ def calculate_angle(a, b, c):
     return angle
 
 
-cap = cv2.VideoCapture("test.mp4")
+cap = cv2.VideoCapture(MYVIDEO)
 frame_number = 1
 
 
@@ -183,13 +184,6 @@ while True:
                 -1
             )
 
-        print(
-            f"Frame: {frame_number}, "
-            f"Knee angle: {knee_angle:.2f}, "
-            f"Hip angle: {hip_angle:.2f}"
-        )
-
-
         # =====================================
         # MOVEMENT / HOLD DETECTION
         # =====================================
@@ -201,7 +195,6 @@ while True:
         stability_window.append(
             (knee_angle, hip_angle)
         )
-
 
         # -------------------------
         # 1. WAITING FOR MOVEMENT
@@ -226,11 +219,6 @@ while True:
             if combined_change > MOVEMENT_THRESHOLD:
 
                 state = "moving"
-
-                print(
-                    f"Movement started at frame "
-                    f"{frame_number}"
-                )
 
 
         # -------------------------
@@ -270,11 +258,6 @@ while True:
 
                 state = "holding"
 
-                print(
-                    f"Hold detected at frame "
-                    f"{frame_number}"
-                )
-
 
         # -------------------------
         # 3. HOLDING
@@ -298,11 +281,6 @@ while True:
             if combined_change > MOVEMENT_THRESHOLD:
 
                 state = "finished"
-
-                print(
-                    f"Hold finished at frame "
-                    f"{frame_number}"
-                )
 
             else:
 
@@ -375,21 +353,6 @@ if pose_frames:
     ) / len(pose_frames)
 
     print()
-    print(
-        f"Pose detected from frame "
-        f"{pose_frames[0]['frame']} "
-        f"to {pose_frames[-1]['frame']}"
-    )
-
-    print(
-        f"Average knee angle: "
-        f"{average_knee:.2f}"
-    )
-
-    print(
-        f"Average hip angle: "
-        f"{average_hip:.2f}"
-    )
 
 else:
 
