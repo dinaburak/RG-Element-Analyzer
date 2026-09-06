@@ -1,8 +1,13 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 from typing import Optional
 
-DATABASE_URL = "postgresql://postgres:kjcjcm11!@localhost:5432/test_db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 
@@ -16,6 +21,10 @@ class RGElement(SQLModel, table=True):
     element_name: str
     body_difficulty_category: str
     base_value: float
+    knee_angle: float | None = None
+    hip_angle: float | None = None
+    knee_tolerance: float | None = None
+    hip_tolerance: float | None = None
 
 @app.on_event("startup")
 def on_startup():

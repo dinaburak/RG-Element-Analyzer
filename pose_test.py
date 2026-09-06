@@ -6,6 +6,7 @@ from collections import deque
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from element_identifier import identify_element
 
 
 # Path to this project folder
@@ -393,3 +394,15 @@ if pose_frames:
 else:
 
     print("No held pose detected")
+
+
+element = identify_element(
+    average_knee,
+    average_hip
+)
+
+if element:
+    print("Identified element:", element.element_name)
+    print("Element value:", element.base_value)
+else:
+    print("No matching element found")
