@@ -1,7 +1,7 @@
 # Rhythmic Gymnastics Element Analyzer
 
-A Python-based computer vision application that analyzes rhythmic gymnastics
-elements from video by tracking body landmarks and joint movement. The system
+A Python-based computer vision application using MediaPipe, OpenCV, FastAPI,
+and PostgreSQL to analyze rhythmic gymnastics elements from video by tracking body landmarks and joint movement. The system
 detects held positions, calculates joint angles, and identifies performed
 elements using reference data stored in PostgreSQL.
 
@@ -22,17 +22,6 @@ elements using reference data stored in PostgreSQL.
 # Demo
 
 Demo video coming soon.
-
-## Technologies
-
-- Python
-- MediaPipe
-- OpenCV
-- FastAPI
-- PostgreSQL
-- SQLModel
-- NumPy
-- pandas
 
 ## Project Structure
 
