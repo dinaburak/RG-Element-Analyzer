@@ -7,16 +7,10 @@ elements using reference data stored in PostgreSQL.
 
 ## Features
 
-- Processes rhythmic gymnastics videos frame by frame using OpenCV
-- Detects body landmarks using MediaPipe Pose Landmarker
-- Visualizes tracked joints and body segments directly on the video
-- Detects when an athlete enters and holds a position
-- Excludes preparation and exit movement from pose measurements
-- Calculates average joint angles during the detected hold
-- Compares measured angles with reference values stored in PostgreSQL
-- Uses configurable angle tolerances to account for variation in body position
-- Identifies the corresponding rhythmic gymnastics element
-- Returns the identified element's base value
+- Detects body landmarks in rhythmic gymnastics videos using MediaPipe
+- Detects the held portion of an element and averages joint angles during the hold
+- Compares measured angles with PostgreSQL reference data
+- Identifies the closest matching element and returns its base value
 - Uses FastAPI and SQLModel for backend and database integration
 
 # Demo
