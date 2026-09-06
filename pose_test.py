@@ -78,26 +78,42 @@ while True:
     if result.pose_landmarks:
         landmarks = result.pose_landmarks[0]
 
-        # RIGHT knee points (index-based)
+        # RIGHT landmarks (index-based)
+        right_shoulder = landmarks[12]
         right_hip = landmarks[24]
         right_knee = landmarks[26]
         right_ankle = landmarks[28]
 
         # Convert to (x, y)
+        shoulder = (right_shoulder.x, right_shoulder.y)
         hip = (right_hip.x, right_hip.y)
         knee = (right_knee.x, right_knee.y)
         ankle = (right_ankle.x, right_ankle.y)
 
         # Calculate angle
-        angle = calculate_angle(hip, knee, ankle)
+        knee_angle = calculate_angle(hip, knee, ankle)
+        hip_angle  = calculate_angle(shoulder, hip, knee)
 
-        print(f"Frame: {frame_number}, Angle: {angle}")
+        print(
+                f"Frame: {frame_number}, "
+                f"Knee angle: {knee_angle}, "
+                f"Hip angle: {hip_angle}")
 
         # Display
         cv2.putText(
             frame,
-            f"right knee angle: {int(angle)}",
+            f"right knee angle: {int(knee_angle)}",
             (50, 50),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 255, 0),
+            2
+        )
+
+        cv2.putText(
+            frame,
+            f"right hip angle: {int(hip_angle)}",
+            (50, 100),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
