@@ -133,6 +133,55 @@ while True:
             knee
         )
 
+        # ---------------------------------
+        # Convert landmarks to pixel coordinates
+        # ---------------------------------
+
+        height, width, _ = frame.shape
+
+        shoulder_px = (
+            int(right_shoulder.x * width),
+            int(right_shoulder.y * height)
+        )
+
+        hip_px = (
+            int(right_hip.x * width),
+            int(right_hip.y * height)
+        )
+
+        knee_px = (
+            int(right_knee.x * width),
+            int(right_knee.y * height)
+        )
+
+        ankle_px = (
+            int(right_ankle.x * width),
+            int(right_ankle.y * height)
+        )
+
+
+        # ---------------------------------
+        # Draw lines between the joints
+        # ---------------------------------
+
+        cv2.line(frame, shoulder_px, hip_px, (0, 255, 255), 3)
+        cv2.line(frame, hip_px, knee_px, (0, 255, 255), 3)
+        cv2.line(frame, knee_px, ankle_px, (0, 255, 255), 3)
+
+
+        # ---------------------------------
+        # Draw circles on the joints
+        # ---------------------------------
+
+        for point in [shoulder_px, hip_px, knee_px, ankle_px]:
+            cv2.circle(
+                frame,
+                point,
+                8,
+                (0, 0, 255),
+                -1
+            )
+
         print(
             f"Frame: {frame_number}, "
             f"Knee angle: {knee_angle:.2f}, "
