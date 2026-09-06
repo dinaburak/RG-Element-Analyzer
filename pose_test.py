@@ -2,6 +2,7 @@ import cv2
 import math
 import mediapipe as mp
 from pathlib import Path
+from collections import deque
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -48,14 +49,24 @@ def calculate_angle(a, b, c):
     return angle
 
 
-options = PoseLandmarkerOptions(
-    base_options=BaseOptions(model_asset_path=str(model_path)),
-    running_mode=VisionRunningMode.VIDEO
-)
-
-detector = PoseLandmarker.create_from_options(options)
 cap = cv2.VideoCapture("test.mp4")
 frame_number = 1
+
+
+# -------------------------
+# HOLD DETECTION VARIABLES
+# -------------------------
+
+state = "waiting"
+
+movement_window = deque(maxlen=5)
+stability_window = deque(maxlen=10)
+
+MOVEMENT_THRESHOLD = 6
+STABILITY_THRESHOLD = 5
+
+pose_frames = []
+
 
 while True:
 
@@ -73,33 +84,186 @@ while True:
     )
 
     # Run detection
-    result = detector.detect_for_video(mp_image, frame_number)
+    result = detector.detect_for_video(
+        mp_image,
+        frame_number
+    )
 
     if result.pose_landmarks:
+
         landmarks = result.pose_landmarks[0]
 
-        # RIGHT landmarks (index-based)
+        # RIGHT landmarks
         right_shoulder = landmarks[12]
         right_hip = landmarks[24]
         right_knee = landmarks[26]
         right_ankle = landmarks[28]
 
         # Convert to (x, y)
-        shoulder = (right_shoulder.x, right_shoulder.y)
-        hip = (right_hip.x, right_hip.y)
-        knee = (right_knee.x, right_knee.y)
-        ankle = (right_ankle.x, right_ankle.y)
+        shoulder = (
+            right_shoulder.x,
+            right_shoulder.y
+        )
 
-        # Calculate angle
-        knee_angle = calculate_angle(hip, knee, ankle)
-        hip_angle  = calculate_angle(shoulder, hip, knee)
+        hip = (
+            right_hip.x,
+            right_hip.y
+        )
+
+        knee = (
+            right_knee.x,
+            right_knee.y
+        )
+
+        ankle = (
+            right_ankle.x,
+            right_ankle.y
+        )
+
+        # Calculate angles
+        knee_angle = calculate_angle(
+            hip,
+            knee,
+            ankle
+        )
+
+        hip_angle = calculate_angle(
+            shoulder,
+            hip,
+            knee
+        )
 
         print(
-                f"Frame: {frame_number}, "
-                f"Knee angle: {knee_angle}, "
-                f"Hip angle: {hip_angle}")
+            f"Frame: {frame_number}, "
+            f"Knee angle: {knee_angle:.2f}, "
+            f"Hip angle: {hip_angle:.2f}"
+        )
 
-        # Display
+
+        # =====================================
+        # MOVEMENT / HOLD DETECTION
+        # =====================================
+
+        movement_window.append(
+            (knee_angle, hip_angle)
+        )
+
+        stability_window.append(
+            (knee_angle, hip_angle)
+        )
+
+
+        # -------------------------
+        # 1. WAITING FOR MOVEMENT
+        # -------------------------
+
+        if (
+            state == "waiting"
+            and len(movement_window) == movement_window.maxlen
+        ):
+
+            first_knee, first_hip = movement_window[0]
+            last_knee, last_hip = movement_window[-1]
+
+            knee_change = last_knee - first_knee
+            hip_change = last_hip - first_hip
+
+            combined_change = math.sqrt(
+                knee_change ** 2 +
+                hip_change ** 2
+            )
+
+            if combined_change > MOVEMENT_THRESHOLD:
+
+                state = "moving"
+
+                print(
+                    f"Movement started at frame "
+                    f"{frame_number}"
+                )
+
+
+        # -------------------------
+        # 2. LOOKING FOR HOLD
+        # -------------------------
+
+        elif (
+            state == "moving"
+            and len(stability_window)
+            == stability_window.maxlen
+        ):
+
+            knee_angles = [
+                x[0] for x in stability_window
+            ]
+
+            hip_angles = [
+                x[1] for x in stability_window
+            ]
+
+            knee_range = (
+                max(knee_angles) -
+                min(knee_angles)
+            )
+
+            hip_range = (
+                max(hip_angles) -
+                min(hip_angles)
+            )
+
+            combined_stability = math.sqrt(
+                knee_range ** 2 +
+                hip_range ** 2
+            )
+
+            if combined_stability < STABILITY_THRESHOLD:
+
+                state = "holding"
+
+                print(
+                    f"Hold detected at frame "
+                    f"{frame_number}"
+                )
+
+
+        # -------------------------
+        # 3. HOLDING
+        # -------------------------
+
+        elif state == "holding":
+
+            first_knee, first_hip = movement_window[0]
+            last_knee, last_hip = movement_window[-1]
+
+            knee_change = last_knee - first_knee
+            hip_change = last_hip - first_hip
+
+            combined_change = math.sqrt(
+                knee_change ** 2 +
+                hip_change ** 2
+            )
+
+            # If movement starts again,
+            # gymnast is leaving the pose
+            if combined_change > MOVEMENT_THRESHOLD:
+
+                state = "finished"
+
+                print(
+                    f"Hold finished at frame "
+                    f"{frame_number}"
+                )
+
+            else:
+
+                pose_frames.append({
+                    "frame": frame_number,
+                    "knee": knee_angle,
+                    "hip": hip_angle
+                })
+
+
+        # Display angles
         cv2.putText(
             frame,
             f"right knee angle: {int(knee_angle)}",
@@ -120,6 +284,18 @@ while True:
             2
         )
 
+        # Show current detection state
+        cv2.putText(
+            frame,
+            f"state: {state}",
+            (50, 150),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2
+        )
+
+
     cv2.imshow("Pose", frame)
 
     if cv2.waitKey(20) & 0xFF == ord("q"):
@@ -127,5 +303,44 @@ while True:
 
     frame_number += 1
 
+
 cap.release()
 cv2.destroyAllWindows()
+
+
+# -------------------------
+# CALCULATE POSE AVERAGES
+# -------------------------
+
+if pose_frames:
+
+    average_knee = sum(
+        frame["knee"]
+        for frame in pose_frames
+    ) / len(pose_frames)
+
+    average_hip = sum(
+        frame["hip"]
+        for frame in pose_frames
+    ) / len(pose_frames)
+
+    print()
+    print(
+        f"Pose detected from frame "
+        f"{pose_frames[0]['frame']} "
+        f"to {pose_frames[-1]['frame']}"
+    )
+
+    print(
+        f"Average knee angle: "
+        f"{average_knee:.2f}"
+    )
+
+    print(
+        f"Average hip angle: "
+        f"{average_hip:.2f}"
+    )
+
+else:
+
+    print("No held pose detected")
