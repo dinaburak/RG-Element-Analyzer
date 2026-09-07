@@ -15,7 +15,7 @@ elements using reference data stored in PostgreSQL.
 
 # Demo
 
-Demo video coming soon.
+https://github.com/user-attachments/assets/e11ca588-de7f-4d93-a108-faabf0101d06
 
 ## Project Structure
 
